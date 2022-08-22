@@ -2,8 +2,11 @@ import fastify from 'fastify';
 import {FastifyRequest, FastifyReply} from 'fastify';
 import Point from './classes/point';
 import routeOptimizer from './routeOptimizer';
+import cors from '@fastify/cors';
 
 const server = fastify();
+
+server.register(cors);
 
 type FindRequest = FastifyRequest<{
   Querystring: {src: string; dest: string};
