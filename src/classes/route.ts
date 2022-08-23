@@ -7,10 +7,12 @@ import Point from './point';
 export default class Route {
   name: string;
   coordinates: Point[];
+  isTricycle: boolean;
 
-  constructor(name: string, coordinates: Point[]) {
+  constructor(name: string, coordinates: Point[], isTricycle?: boolean) {
     this.name = name;
     this.coordinates = coordinates;
+    this.isTricycle = isTricycle ?? false;
   }
 
   equals(route: Route) {
@@ -21,7 +23,10 @@ export default class Route {
     );
   }
 
-  nearestPointFromRoute(tmpPt: Point): {segment: Route; point: Point} {
+  nearestPointFromRoute(
+    tmpPt: Point,
+    opts?: {reverse: boolean}
+  ): {segment: Route; point: Point} {
     let line = lineString(
       this.coordinates.map(i => [i.coordinate[1], i.coordinate[0]])
     );
@@ -29,7 +34,16 @@ export default class Route {
     let closestSegment: Route;
 
     closestSegment = new Route('undefined', []);
-    for (const segment of this.getArrayOfLineSegments()) {
+
+    let coordinates = this.coordinates;
+    if (opts?.reverse) {
+      coordinates = coordinates.slice().reverse();
+    }
+    for (let i = 0; i < coordinates.length - 1; i++) {
+      const segment = new Route(`${this.name} - ${i + 1}`, [
+        coordinates[i],
+        coordinates[i + 1],
+      ]);
       if (
         segment.distanceFromPoint(tmpPt) <= constants.MAXIMUM_WALKABLE_DISTANCE
       ) {
@@ -40,6 +54,7 @@ export default class Route {
         break;
       }
     }
+
     const pt = point([tmpPt.coordinate[1], tmpPt.coordinate[0]]);
     const snapped = nearestPointOnLine(line, pt, {units: 'kilometers'});
 
@@ -60,7 +75,12 @@ export default class Route {
     let minimumDistance = Infinity;
     let lastSegment: Route | null = null;
 
-    this.getArrayOfLineSegments().forEach(segment => {
+    for (let i = 0; i < this.coordinates.length - 1; i++) {
+      const segment = new Route(`${this.name} - ${i + 1}`, [
+        this.coordinates[i],
+        this.coordinates[i + 1],
+      ]);
+
       let distance = Infinity;
 
       const a = segment.coordinates[0].coordinate;
@@ -77,7 +97,7 @@ export default class Route {
           minimumDistance = distance;
           lastSegment = segment;
         }
-        return;
+        continue;
       }
 
       const c2 = dotProduct(v, v);
@@ -87,7 +107,7 @@ export default class Route {
           minimumDistance = distance;
           lastSegment = segment;
         }
-        return;
+        continue;
       }
 
       const b2 = c1 / c2;
@@ -99,7 +119,7 @@ export default class Route {
         minimumDistance = distance;
         lastSegment = segment;
       }
-    });
+    }
 
     if (includeNearestSegment) {
       return {minimumDistance, lastSegment};
@@ -111,22 +131,27 @@ export default class Route {
   totalDistance() {
     let totalDistance = 0;
 
-    this.getArrayOfLineSegments().forEach(segment => {
-      totalDistance += segment.coordinates[0].distanceFrom(
-        segment.coordinates[1]
+    for (let i = 0; i < this.coordinates.length - 1; i++) {
+      totalDistance += this.coordinates[i].distanceFrom(
+        this.coordinates[i + 1]
       );
-    });
+    }
 
     return totalDistance;
   }
 
   intersects(route: Route) {
-    const thisSegments = this.getArrayOfLineSegments();
-    const routeSegment = route.getArrayOfLineSegments();
-    for (let i = 0; i < thisSegments.length; i++) {
-      for (let j = 0; j < routeSegment.length; j++) {
-        const segmentA = thisSegments[i];
-        const segmentB = routeSegment[j];
+    for (let i = 0; i < this.coordinates.length - 1; i++) {
+      const segmentA = new Route(`${this.name} - ${i + 1}`, [
+        this.coordinates[i],
+        this.coordinates[i + 1],
+      ]);
+
+      for (let j = 0; j < route.coordinates.length - 1; j++) {
+        const segmentB = new Route(`${route.name} - ${j + 1}`, [
+          route.coordinates[j],
+          route.coordinates[j + 1],
+        ]);
 
         const a = segmentA.coordinates[0].coordinate[0];
         const b = segmentA.coordinates[0].coordinate[1];
@@ -153,10 +178,18 @@ export default class Route {
 
   minimumDistanceFromRoute(route: Route) {
     let minimumDistance = Infinity;
-    const thisSegments = this.getArrayOfLineSegments();
-    const routeSegments = route.getArrayOfLineSegments();
-    for (const segmentA of thisSegments) {
-      for (const segmentB of routeSegments) {
+    for (let i = 0; i < this.coordinates.length - 1; i++) {
+      const segmentA = new Route(`${this.name} - ${i + 1}`, [
+        this.coordinates[i],
+        this.coordinates[i + 1],
+      ]);
+
+      for (let j = 0; j < route.coordinates.length - 1; j++) {
+        const segmentB = new Route(`${route.name} - ${j + 1}`, [
+          route.coordinates[j],
+          route.coordinates[j + 1],
+        ]);
+
         if (segmentA.intersects(segmentB)) {
           return 0;
         }
@@ -174,10 +207,18 @@ export default class Route {
   }
 
   isWalkableTo(route: Route) {
-    const thisSegments = this.getArrayOfLineSegments();
-    const routeSegments = route.getArrayOfLineSegments();
-    for (const segmentA of thisSegments) {
-      for (const segmentB of routeSegments) {
+    for (let i = 0; i < this.coordinates.length - 1; i++) {
+      const segmentA = new Route(`${this.name} - ${i + 1}`, [
+        this.coordinates[i],
+        this.coordinates[i + 1],
+      ]);
+
+      for (let j = 0; j < route.coordinates.length - 1; j++) {
+        const segmentB = new Route(`${route.name} - ${j + 1}`, [
+          route.coordinates[j],
+          route.coordinates[j + 1],
+        ]);
+
         if (segmentA.intersects(segmentB)) {
           return true;
         }
@@ -196,12 +237,8 @@ export default class Route {
     return false;
   }
 
-  getArrayOfPoints() {
-    return this.coordinates;
-  }
-
-  differentStartPoint(p: Point) {
-    const closest = this.nearestPointFromRoute(p);
+  differentStartPoint(p: Point, opts?: {reverse: boolean}) {
+    const closest = this.nearestPointFromRoute(p, opts);
 
     // create new "route" with closest point to source as starting point
     let startIndex = 0;
@@ -217,11 +254,19 @@ export default class Route {
       ...(rearrangeArray(startIndex, this.coordinates) as Point[]),
     ]);
 
+    rearrangedRoute.coordinates[0] = closest.point;
+
     return rearrangedRoute;
   }
 
-  splitFromPointToPoint(p1: Point, p2: Point) {
-    const rearrangedRoute = this.differentStartPoint(p1);
+  splitFromPointToPoint(
+    p1: Point,
+    p2: Point,
+    opts?: {
+      reverse: boolean;
+    }
+  ) {
+    const rearrangedRoute = this.differentStartPoint(p1, opts);
 
     const closest2 = rearrangedRoute.nearestPointFromRoute(p2);
 
@@ -238,11 +283,13 @@ export default class Route {
       rearrangedRoute.coordinates.slice(0, endIndex + 1)
     );
 
+    newRoute.coordinates[newRoute.coordinates.length - 1] = closest2.point;
+
     return newRoute;
   }
 
-  splitFromSourceToPoint(p: Point) {
-    const closest = this.nearestPointFromRoute(p);
+  splitFromSourceToPoint(p: Point, opts?: {reverse: boolean}) {
+    const closest = this.nearestPointFromRoute(p, opts);
 
     let endIndex = 0;
     for (const [i, coord] of this.coordinates.entries()) {
@@ -257,21 +304,9 @@ export default class Route {
       this.coordinates.slice(0, endIndex + 1)
     );
 
+    newRoute.coordinates[newRoute.coordinates.length - 1] = closest.point;
+
     return newRoute;
-  }
-
-  getArrayOfLineSegments() {
-    const segments: Route[] = [];
-    for (let i = 0; i < this.coordinates.length - 1; i++) {
-      segments.push(
-        new Route(`${this.name} - ${i + 1}`, [
-          this.coordinates[i],
-          this.coordinates[i + 1],
-        ])
-      );
-    }
-
-    return segments;
   }
 
   parseFromGeoJSON(geojson: RouteGeoJSON) {

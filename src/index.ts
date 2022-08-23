@@ -19,7 +19,9 @@ server.get('/find', async (request: FindRequest, reply: FastifyReply) => {
   const src = new Point(tmpSrc as Coordinate);
   const dest = new Point(tmpDest as Coordinate);
 
+  console.time('Optimization time');
   const output = await routeOptimizer(src, dest);
+  console.timeEnd('Optimization time');
 
   reply.code(200).header('Content-Type', 'application/json').send(output);
 });

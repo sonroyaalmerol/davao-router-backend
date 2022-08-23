@@ -49,19 +49,24 @@ const routeOptimizer = async (src: Point, dest: Point) => {
   const outputRoutes: Route[][] = [];
 
   for (const oneRoute of sameRoutes) {
-    const tmpRoute = oneRoute.splitFromPointToPoint(src, dest);
+    let route = oneRoute.splitFromPointToPoint(src, dest);
+    const reversedTmpRoute = oneRoute.splitFromPointToPoint(src, dest, {
+      reverse: true,
+    });
 
-    if (tmpRoute.totalDistance() < oneRoute.totalDistance() * 0.5) {
+    if (route.totalDistance() > reversedTmpRoute.totalDistance()) {
+      route = reversedTmpRoute;
+    }
+
+    if (route.totalDistance() < oneRoute.totalDistance() * 0.5) {
       sourceRoutes = sourceRoutes.filter(route => !route.equals(oneRoute));
     }
 
-    if (tmpRoute.totalDistance() < src.distanceFrom(dest)) {
-      continue;
-    }
-
-    outputRoutes.push([tmpRoute]);
+    outputRoutes.push([route]);
   }
 
+  console.log(`Number of possible Source Routes: ${sourceRoutes.length}`);
+  console.log(`Number of possible Destination Routes: ${destRoutes.length}`);
   for (const sourceRoute of sourceRoutes) {
     for (const destRoute of destRoutes) {
       const trip = floydWarshallPathReconstruction(
@@ -71,31 +76,6 @@ const routeOptimizer = async (src: Point, dest: Point) => {
       );
 
       const merged = mergeRoutes(src, dest, trip);
-
-      if (
-        merged[0].coordinates[0].distanceFrom(src) >
-        constants.MAXIMUM_WALKABLE_DISTANCE
-      ) {
-        continue;
-      }
-
-      if (
-        merged[merged.length - 1].coordinates[
-          merged[merged.length - 1].coordinates.length - 1
-        ].distanceFrom(dest) > constants.MAXIMUM_WALKABLE_DISTANCE
-      ) {
-        continue;
-      }
-
-      if (
-        merged.filter(
-          route =>
-            route.totalDistance() > src.distanceFrom(dest) * 2 ||
-            route.coordinates.length === 1
-        ).length > 0
-      ) {
-        continue;
-      }
 
       outputRoutes.push(merged);
     }

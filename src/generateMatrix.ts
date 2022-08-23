@@ -4,6 +4,7 @@ import Route from './classes/route';
 import {floydWarshallMatrixGenerate} from './floydWarshall';
 
 (async () => {
+  console.time('Generation');
   const geojson: GeoJSONCollection = JSON.parse(
     readFileSync('./davao.geojson', 'utf-8')
   );
@@ -31,4 +32,5 @@ import {floydWarshallMatrixGenerate} from './floydWarshall';
     'floyd-warshall-davao.json',
     JSON.stringify({g, ...generated})
   );
+  console.timeEnd('Generation');
 })();

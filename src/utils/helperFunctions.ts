@@ -14,7 +14,16 @@ const mergeRoutes = (src: Point, dest: Point, routes: Route[]) => {
 
     if (routeB === null) {
       const tmpLastTrip = routeA.splitFromSourceToPoint(dest);
-      outputRoutes.push(tmpLastTrip);
+      const tmpLastTripReversed = routes[i]
+        .differentStartPoint(initPoint, {reverse: true})
+        .splitFromSourceToPoint(dest);
+
+      if (tmpLastTrip.totalDistance() < tmpLastTripReversed.totalDistance()) {
+        outputRoutes.push(tmpLastTrip);
+      } else {
+        outputRoutes.push(tmpLastTripReversed);
+      }
+
       break;
     }
 
@@ -32,9 +41,18 @@ const mergeRoutes = (src: Point, dest: Point, routes: Route[]) => {
         ]);
 
         if (segmentA.isWalkableTo(segmentB)) {
-          const tmpTripRoute = routeA.splitFromSourceToPoint(
-            segmentA.coordinates[1]
+          let tmpTripRoute = routeA.splitFromSourceToPoint(
+            segmentB.coordinates[0]
           );
+          const tmpTripRouteReversed = routes[i]
+            .differentStartPoint(initPoint, {reverse: true})
+            .splitFromSourceToPoint(segmentB.coordinates[0]);
+
+          if (
+            tmpTripRoute.totalDistance() > tmpTripRouteReversed.totalDistance()
+          ) {
+            tmpTripRoute = tmpTripRouteReversed;
+          }
 
           if (tmpTripRoute.coordinates.length > 1) {
             initPoint = segmentB.coordinates[0];
