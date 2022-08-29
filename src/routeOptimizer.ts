@@ -14,28 +14,37 @@ const routeOptimizer = async (src: Point, dest: Point) => {
     rawNode =>
       new Route(
         rawNode.name,
-        rawNode.coordinates.map(point => new Point(point.coordinate))
+        rawNode.coordinates.map(point => new Point(point.coordinate)),
+        rawNode.isTricycle
       )
   );
 
   floydWarshallModel.g.edges = floydWarshallModel.g.edges.map(rawEdge => ({
     u: new Route(
       rawEdge.u.name,
-      rawEdge.u.coordinates.map(point => new Point(point.coordinate))
+      rawEdge.u.coordinates.map(point => new Point(point.coordinate)),
+      rawEdge.u.isTricycle
     ),
     v: new Route(
       rawEdge.v.name,
-      rawEdge.v.coordinates.map(point => new Point(point.coordinate))
+      rawEdge.v.coordinates.map(point => new Point(point.coordinate)),
+      rawEdge.v.isTricycle
     ),
     weight: rawEdge.weight,
   }));
 
-  let sourceRoutes = floydWarshallModel.g.nodes.filter(route => {
-    return route.distanceFromPoint(src) <= constants.MAXIMUM_WALKABLE_DISTANCE;
+  const sourceRoutes = floydWarshallModel.g.nodes.filter(route => {
+    return (
+      route.distanceFromPoint(src) <= constants.MAXIMUM_WALKABLE_DISTANCE ||
+      route.isInside(src)
+    );
   });
 
   const tmpDestRoutes = floydWarshallModel.g.nodes.filter(route => {
-    return route.distanceFromPoint(dest) <= constants.MAXIMUM_WALKABLE_DISTANCE;
+    return (
+      route.distanceFromPoint(dest) <= constants.MAXIMUM_WALKABLE_DISTANCE ||
+      route.isInside(dest)
+    );
   });
 
   const destRoutes = tmpDestRoutes.filter(
@@ -49,20 +58,9 @@ const routeOptimizer = async (src: Point, dest: Point) => {
   const outputRoutes: Route[][] = [];
 
   for (const oneRoute of sameRoutes) {
-    let route = oneRoute.splitFromPointToPoint(src, dest);
-    const reversedTmpRoute = oneRoute.splitFromPointToPoint(src, dest, {
-      reverse: true,
-    });
+    const merged = mergeRoutes(src, dest, [oneRoute]);
 
-    if (route.totalDistance() > reversedTmpRoute.totalDistance()) {
-      route = reversedTmpRoute;
-    }
-
-    if (route.totalDistance() < oneRoute.totalDistance() * 0.5) {
-      sourceRoutes = sourceRoutes.filter(route => !route.equals(oneRoute));
-    }
-
-    outputRoutes.push([route]);
+    outputRoutes.push(merged);
   }
 
   console.log(`Number of possible Source Routes: ${sourceRoutes.length}`);
@@ -84,14 +82,22 @@ const routeOptimizer = async (src: Point, dest: Point) => {
   outputRoutes.sort((a, b) => {
     let totalCostA = 0;
     for (const routeA of a) {
-      totalCostA += constants.BASE_FARE;
-      totalCostA += routeA.totalDistance() * constants.FARE_PER_KILOMETER;
+      if (routeA.isTricycle) {
+        totalCostA += constants.TRICYCLE_FARE;
+      } else {
+        totalCostA += constants.BASE_FARE;
+        totalCostA += routeA.totalDistance() * constants.FARE_PER_KILOMETER;
+      }
     }
 
     let totalCostB = 0;
     for (const routeB of b) {
-      totalCostB += constants.BASE_FARE;
-      totalCostB += routeB.totalDistance() * constants.FARE_PER_KILOMETER;
+      if (routeB.isTricycle) {
+        totalCostB += constants.TRICYCLE_FARE;
+      } else {
+        totalCostB += constants.BASE_FARE;
+        totalCostB += routeB.totalDistance() * constants.FARE_PER_KILOMETER;
+      }
     }
 
     return totalCostA - totalCostB;

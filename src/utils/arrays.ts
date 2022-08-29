@@ -1,5 +1,9 @@
 const rearrangeArray = (newStartIndex: number, arr: unknown[]) => {
-  return [...arr.slice(newStartIndex), ...arr.slice(0, newStartIndex)];
+  const rearranged = [
+    ...arr.slice(newStartIndex),
+    ...arr.slice(0, newStartIndex),
+  ];
+  return rearranged;
 };
 
 // [0, 1, 2, 3, 4]

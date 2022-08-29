@@ -19,7 +19,6 @@ import {floydWarshallMatrixGenerate} from './floydWarshall';
   for (const route1 of g.nodes) {
     for (const route2 of g.nodes) {
       if (route1.equals(route2)) continue;
-
       if (route1.isWalkableTo(route2)) {
         g.addEdge(route1, route2, 1);
       }

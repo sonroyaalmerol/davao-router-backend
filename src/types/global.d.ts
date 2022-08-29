@@ -12,7 +12,7 @@ declare global {
       name: string;
     };
     geometry: {
-      type: 'LineString';
+      type: 'LineString' | 'Polygon';
       coordinates: Coordinate[];
     };
   };

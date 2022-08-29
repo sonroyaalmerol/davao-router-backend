@@ -70,7 +70,8 @@ const floydWarshallPathReconstruction = (
   path.push(
     new Route(
       u.name,
-      u.coordinates.map(i => new Point(i.coordinate))
+      u.coordinates.map(i => new Point(i.coordinate)),
+      u.isTricycle
     )
   );
   while (u.name !== v.name) {
@@ -80,7 +81,8 @@ const floydWarshallPathReconstruction = (
       path.push(
         new Route(
           u.name,
-          u.coordinates.map(i => new Point(i.coordinate))
+          u.coordinates.map(i => new Point(i.coordinate)),
+          u.isTricycle
         )
       );
     }

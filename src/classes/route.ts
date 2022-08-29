@@ -1,6 +1,7 @@
 import {lineString, nearestPointOnLine, point} from '@turf/turf';
 import constants from '../constants';
 import {rearrangeArray} from '../utils/arrays';
+import {pointInPolygon} from '../utils/polygon';
 import {dotProduct} from '../utils/vectorOperations';
 import Point from './point';
 
@@ -23,14 +24,17 @@ export default class Route {
     );
   }
 
+  isInside(point: Point) {
+    if (this.coordinates.length < 3 || !this.isTricycle) {
+      return false;
+    }
+    return pointInPolygon(point, this);
+  }
+
   nearestPointFromRoute(
     tmpPt: Point,
     opts?: {reverse: boolean}
   ): {segment: Route; point: Point} {
-    let line = lineString(
-      this.coordinates.map(i => [i.coordinate[1], i.coordinate[0]])
-    );
-
     let closestSegment: Route;
 
     closestSegment = new Route('undefined', []);
@@ -39,21 +43,44 @@ export default class Route {
     if (opts?.reverse) {
       coordinates = coordinates.slice().reverse();
     }
+    let checkingNearest = false;
     for (let i = 0; i < coordinates.length - 1; i++) {
       const segment = new Route(`${this.name} - ${i + 1}`, [
         coordinates[i],
         coordinates[i + 1],
       ]);
-      if (
-        segment.distanceFromPoint(tmpPt) <= constants.MAXIMUM_WALKABLE_DISTANCE
-      ) {
-        line = lineString(
-          segment.coordinates.map(i => [i.coordinate[1], i.coordinate[0]])
-        );
-        closestSegment = segment;
-        break;
+      if (!checkingNearest) {
+        if (
+          segment.distanceFromPoint(tmpPt) <=
+          constants.MAXIMUM_WALKABLE_DISTANCE
+        ) {
+          checkingNearest = true;
+          closestSegment = segment;
+        }
+        continue;
       }
+      if (
+        segment.distanceFromPoint(tmpPt) <
+          closestSegment.distanceFromPoint(tmpPt) ||
+        closestSegment.name === 'undefined'
+      ) {
+        closestSegment = segment;
+        continue;
+      }
+
+      break;
     }
+
+    if (closestSegment.name === 'undefined') {
+      return {
+        segment: closestSegment,
+        point: new Point([-1, -1]),
+      };
+    }
+
+    const line = lineString(
+      closestSegment.coordinates.map(i => [i.coordinate[1], i.coordinate[0]])
+    );
 
     const pt = point([tmpPt.coordinate[1], tmpPt.coordinate[0]]);
     const snapped = nearestPointOnLine(line, pt, {units: 'kilometers'});
@@ -67,13 +94,8 @@ export default class Route {
     };
   }
 
-  distanceFromPoint(point: Point, includeNearestSegment?: boolean) {
-    if (includeNearestSegment === undefined) {
-      includeNearestSegment = false;
-    }
-
+  distanceFromPoint(point: Point) {
     let minimumDistance = Infinity;
-    let lastSegment: Route | null = null;
 
     for (let i = 0; i < this.coordinates.length - 1; i++) {
       const segment = new Route(`${this.name} - ${i + 1}`, [
@@ -95,7 +117,6 @@ export default class Route {
         distance = new Point(p).distanceFrom(new Point(a));
         if (distance < minimumDistance) {
           minimumDistance = distance;
-          lastSegment = segment;
         }
         continue;
       }
@@ -105,7 +126,6 @@ export default class Route {
         distance = new Point(p).distanceFrom(new Point(b));
         if (distance < minimumDistance) {
           minimumDistance = distance;
-          lastSegment = segment;
         }
         continue;
       }
@@ -117,12 +137,7 @@ export default class Route {
 
       if (distance < minimumDistance) {
         minimumDistance = distance;
-        lastSegment = segment;
       }
-    }
-
-    if (includeNearestSegment) {
-      return {minimumDistance, lastSegment};
     }
 
     return minimumDistance;
@@ -239,11 +254,13 @@ export default class Route {
 
   differentStartPoint(p: Point, opts?: {reverse: boolean}) {
     const closest = this.nearestPointFromRoute(p, opts);
-
+    if (closest.segment.name === 'undefined') {
+      return this;
+    }
     // create new "route" with closest point to source as starting point
     let startIndex = 0;
     for (const [i, coord] of this.coordinates.entries()) {
-      if (coord.equals(closest.segment.coordinates[1])) {
+      if (coord.equals(closest.segment.coordinates[0])) {
         startIndex = i;
         break;
       }
@@ -251,14 +268,14 @@ export default class Route {
 
     const rearrangedRoute = new Route(this.name, [
       closest.point,
-      ...(rearrangeArray(startIndex, this.coordinates) as Point[]),
+      ...(rearrangeArray(startIndex + 1, this.coordinates) as Point[]),
     ]);
 
-    rearrangedRoute.coordinates[0] = closest.point;
+    // rearrangedRoute.coordinates[0] = closest.point;
 
     return rearrangedRoute;
   }
-
+  /*
   splitFromPointToPoint(
     p1: Point,
     p2: Point,
@@ -287,9 +304,14 @@ export default class Route {
 
     return newRoute;
   }
+  */
 
   splitFromSourceToPoint(p: Point, opts?: {reverse: boolean}) {
     const closest = this.nearestPointFromRoute(p, opts);
+
+    if (closest.segment.name === 'undefined') {
+      return this;
+    }
 
     let endIndex = 0;
     for (const [i, coord] of this.coordinates.entries()) {
@@ -311,12 +333,37 @@ export default class Route {
 
   parseFromGeoJSON(geojson: RouteGeoJSON) {
     this.name = geojson.properties.name;
-    this.coordinates = geojson.geometry.coordinates.map(
-      coordinate => new Point([coordinate[1], coordinate[0]])
-    );
+    if (geojson.geometry.type === 'Polygon') {
+      const coords = geojson.geometry.coordinates[0] as unknown as Coordinate[];
+      this.coordinates = coords.map(
+        (coordinate: Coordinate) => new Point([coordinate[1], coordinate[0]])
+      );
+      this.isTricycle = true;
+    } else {
+      this.coordinates = geojson.geometry.coordinates.map(
+        coordinate => new Point([coordinate[1], coordinate[0]])
+      );
+    }
   }
 
   transformToGeoJSON(): RouteGeoJSON {
+    if (this.isTricycle) {
+      return {
+        type: 'Feature',
+        properties: {
+          name: this.name,
+        },
+        geometry: {
+          type: 'Polygon',
+          coordinates: [
+            this.coordinates.map(coordinate => [
+              coordinate.coordinate[1],
+              coordinate.coordinate[0],
+            ]),
+          ] as unknown as Coordinate[],
+        },
+      };
+    }
     return {
       type: 'Feature',
       properties: {
