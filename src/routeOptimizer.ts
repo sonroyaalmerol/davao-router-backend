@@ -110,7 +110,7 @@ const routeOptimizer = async (
     }
   }
 
-  let priority: PriorityChoice = 'Distance';
+  let priority: PriorityChoice = 'Fare';
   if (opts?.priority) {
     priority = opts.priority;
   }
@@ -150,16 +150,6 @@ const routeOptimizer = async (
     }
     return totalCostA - totalCostB;
   });
-
-  /*
-  outputRoutes = outputRoutes.filter(r => {
-    return (
-      r[0].distanceFromPoint(src) <= constants.MAXIMUM_WALKABLE_DISTANCE &&
-      r[r.length - 1].distanceFromPoint(dest) <=
-        constants.MAXIMUM_WALKABLE_DISTANCE
-    );
-  });
-  */
 
   const collections: GeoJSONCollection[] = [];
   for (const route of outputRoutes) {
