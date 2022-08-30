@@ -10,10 +10,15 @@ const mergeRoutes = (src: Point, dest: Point, routes: Route[]) => {
       outputRoutes.push(routes[i]);
     }
     // route A reverse?
-    const routeA = routes[i].differentStartPoint(initPoint);
-    const routeAReverse = routes[i].differentStartPoint(initPoint, {
+    let routeA = routes[i].differentStartPoint(initPoint);
+    let routeAReverse = routes[i].differentStartPoint(initPoint, {
       reverse: true,
     });
+
+    if (routes[i].isTricycle) {
+      routeA = routes[i];
+      routeAReverse = routes[i];
+    }
 
     if (routeA === null || routeAReverse === null) {
       return null;

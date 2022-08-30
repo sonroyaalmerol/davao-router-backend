@@ -38,6 +38,7 @@ const routeOptimizer = async (
   }));
 
   const sourceRoutes = floydWarshallModel.g.nodes.filter(route => {
+    console.log(route.isInside(src));
     return (
       route.distanceFromPoint(src) <= constants.MAXIMUM_WALKABLE_DISTANCE ||
       route.isInside(src)
@@ -69,9 +70,12 @@ const routeOptimizer = async (
     }
 
     if (
-      merged[0].distanceFromPoint(src) <= constants.MAXIMUM_WALKABLE_DISTANCE &&
-      merged[merged.length - 1].distanceFromPoint(dest) <=
-        constants.MAXIMUM_WALKABLE_DISTANCE
+      (merged[0].distanceFromPoint(src) <=
+        constants.MAXIMUM_WALKABLE_DISTANCE ||
+        merged[0].isInside(src)) &&
+      (merged[merged.length - 1].distanceFromPoint(dest) <=
+        constants.MAXIMUM_WALKABLE_DISTANCE ||
+        merged[merged.length - 1].isInside(dest))
     ) {
       outputRoutes.push(merged);
     }
@@ -94,10 +98,12 @@ const routeOptimizer = async (
       }
 
       if (
-        merged[0].distanceFromPoint(src) <=
-          constants.MAXIMUM_WALKABLE_DISTANCE &&
-        merged[merged.length - 1].distanceFromPoint(dest) <=
-          constants.MAXIMUM_WALKABLE_DISTANCE
+        (merged[0].distanceFromPoint(src) <=
+          constants.MAXIMUM_WALKABLE_DISTANCE ||
+          merged[0].isInside(src)) &&
+        (merged[merged.length - 1].distanceFromPoint(dest) <=
+          constants.MAXIMUM_WALKABLE_DISTANCE ||
+          merged[merged.length - 1].isInside(dest))
       ) {
         outputRoutes.push(merged);
       }
