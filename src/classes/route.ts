@@ -144,6 +144,9 @@ export default class Route {
   }
 
   totalDistance() {
+    if (this.isTricycle) {
+      return 0;
+    }
     let totalDistance = 0;
 
     for (let i = 0; i < this.coordinates.length - 1; i++) {
@@ -191,36 +194,6 @@ export default class Route {
     return false;
   }
 
-  minimumDistanceFromRoute(route: Route) {
-    let minimumDistance = Infinity;
-    for (let i = 0; i < this.coordinates.length - 1; i++) {
-      const segmentA = new Route(`${this.name} - ${i + 1}`, [
-        this.coordinates[i],
-        this.coordinates[i + 1],
-      ]);
-
-      for (let j = 0; j < route.coordinates.length - 1; j++) {
-        const segmentB = new Route(`${route.name} - ${j + 1}`, [
-          route.coordinates[j],
-          route.coordinates[j + 1],
-        ]);
-
-        if (segmentA.intersects(segmentB)) {
-          return 0;
-        }
-
-        const a = route.distanceFromPoint(segmentA.coordinates[0]) as number;
-        const b = route.distanceFromPoint(segmentA.coordinates[1]) as number;
-        const c = this.distanceFromPoint(segmentB.coordinates[0]) as number;
-        const d = this.distanceFromPoint(segmentB.coordinates[1]) as number;
-
-        minimumDistance = Math.min(a, b, c, d, minimumDistance);
-      }
-    }
-
-    return minimumDistance;
-  }
-
   isWalkableTo(route: Route) {
     for (let i = 0; i < this.coordinates.length - 1; i++) {
       const segmentA = new Route(`${this.name} - ${i + 1}`, [
@@ -255,80 +228,26 @@ export default class Route {
   differentStartPoint(p: Point, opts?: {reverse: boolean}) {
     const closest = this.nearestPointFromRoute(p, opts);
     if (closest.segment.name === 'undefined') {
-      return this;
+      return null;
     }
     // create new "route" with closest point to source as starting point
     let startIndex = 0;
     for (const [i, coord] of this.coordinates.entries()) {
-      if (coord.equals(closest.segment.coordinates[0])) {
+      if (coord.equals(closest.segment.coordinates[1])) {
         startIndex = i;
         break;
       }
     }
 
+    // TODO: observe...
     const rearrangedRoute = new Route(this.name, [
       closest.point,
-      ...(rearrangeArray(startIndex + 1, this.coordinates) as Point[]),
+      ...(rearrangeArray(startIndex, this.coordinates) as Point[]),
     ]);
 
     // rearrangedRoute.coordinates[0] = closest.point;
 
     return rearrangedRoute;
-  }
-  /*
-  splitFromPointToPoint(
-    p1: Point,
-    p2: Point,
-    opts?: {
-      reverse: boolean;
-    }
-  ) {
-    const rearrangedRoute = this.differentStartPoint(p1, opts);
-
-    const closest2 = rearrangedRoute.nearestPointFromRoute(p2);
-
-    let endIndex = 0;
-    for (const [i, coord] of rearrangedRoute.coordinates.entries()) {
-      if (coord.equals(closest2.segment.coordinates[1])) {
-        endIndex = i;
-        break;
-      }
-    }
-
-    const newRoute = new Route(
-      this.name,
-      rearrangedRoute.coordinates.slice(0, endIndex + 1)
-    );
-
-    newRoute.coordinates[newRoute.coordinates.length - 1] = closest2.point;
-
-    return newRoute;
-  }
-  */
-
-  splitFromSourceToPoint(p: Point, opts?: {reverse: boolean}) {
-    const closest = this.nearestPointFromRoute(p, opts);
-
-    if (closest.segment.name === 'undefined') {
-      return this;
-    }
-
-    let endIndex = 0;
-    for (const [i, coord] of this.coordinates.entries()) {
-      if (coord.equals(closest.segment.coordinates[1])) {
-        endIndex = i;
-        break;
-      }
-    }
-
-    const newRoute = new Route(
-      this.name,
-      this.coordinates.slice(0, endIndex + 1)
-    );
-
-    newRoute.coordinates[newRoute.coordinates.length - 1] = closest.point;
-
-    return newRoute;
   }
 
   parseFromGeoJSON(geojson: RouteGeoJSON) {

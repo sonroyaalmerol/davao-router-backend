@@ -33,4 +33,6 @@ declare global {
     v: Route;
     weight: number;
   };
+
+  type PriorityChoice = 'Distance' | 'NumberOfTransfers' | 'Fare';
 }

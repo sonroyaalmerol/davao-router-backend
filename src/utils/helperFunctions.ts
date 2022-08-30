@@ -14,6 +14,11 @@ const mergeRoutes = (src: Point, dest: Point, routes: Route[]) => {
     const routeAReverse = routes[i].differentStartPoint(initPoint, {
       reverse: true,
     });
+
+    if (routeA === null || routeAReverse === null) {
+      return null;
+    }
+
     let routeB: Route | null = null;
 
     if (i + 1 < routes.length) {
@@ -24,6 +29,12 @@ const mergeRoutes = (src: Point, dest: Point, routes: Route[]) => {
     const rRoute = new Route(`${routeA.name}`, []);
     let fDone = false;
     let rDone = false;
+
+    let fChecking = false;
+    let rChecking = false;
+    let fClosestSegment: Route | null = null;
+    let rClosestSegment: Route | null = null;
+
     for (let x = 0; x < routeA.coordinates.length - 1; x++) {
       if (fDone && rDone) {
         if (fRoute.totalDistance() < rRoute.totalDistance()) {
@@ -50,29 +61,56 @@ const mergeRoutes = (src: Point, dest: Point, routes: Route[]) => {
       ]);
 
       if (routeB === null) {
-        // TODO: get nearest as possible
         if (!fDone) {
           fRoute.coordinates.push(routeA.coordinates[x]);
 
-          if (
-            fSegment.distanceFromPoint(dest) <=
-            constants.MAXIMUM_WALKABLE_DISTANCE
-          ) {
-            fRoute.coordinates.push(routeA.nearestPointFromRoute(dest).point);
-            fDone = true;
+          if (!fChecking) {
+            if (
+              fSegment.distanceFromPoint(dest) <=
+              constants.MAXIMUM_WALKABLE_DISTANCE
+            ) {
+              fClosestSegment = fSegment;
+              fChecking = true;
+            }
+          } else {
+            if (fClosestSegment !== null) {
+              if (
+                fSegment.distanceFromPoint(dest) >
+                fClosestSegment.distanceFromPoint(dest)
+              ) {
+                fRoute.coordinates[fRoute.coordinates.length - 1] =
+                  fClosestSegment.nearestPointFromRoute(dest).point;
+                fDone = true;
+              } else {
+                fClosestSegment = fSegment;
+              }
+            }
           }
         }
         if (!rDone) {
           rRoute.coordinates.push(routeAReverse.coordinates[x]);
 
-          if (
-            rSegment.distanceFromPoint(dest) <=
-            constants.MAXIMUM_WALKABLE_DISTANCE
-          ) {
-            rRoute.coordinates.push(
-              routeAReverse.nearestPointFromRoute(dest).point
-            );
-            rDone = true;
+          if (!rChecking) {
+            if (
+              rSegment.distanceFromPoint(dest) <=
+              constants.MAXIMUM_WALKABLE_DISTANCE
+            ) {
+              rClosestSegment = rSegment;
+              rChecking = true;
+            }
+          } else {
+            if (rClosestSegment !== null) {
+              if (
+                rSegment.distanceFromPoint(dest) >
+                rClosestSegment.distanceFromPoint(dest)
+              ) {
+                rRoute.coordinates[rRoute.coordinates.length - 1] =
+                  rClosestSegment.nearestPointFromRoute(dest).point;
+                rDone = true;
+              } else {
+                rClosestSegment = rSegment;
+              }
+            }
           }
         }
       } else {

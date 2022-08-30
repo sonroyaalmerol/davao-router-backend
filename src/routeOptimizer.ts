@@ -5,7 +5,11 @@ import constants from './constants';
 import {floydWarshallPathReconstruction} from './floydWarshall';
 import {mergeRoutes} from './utils/helperFunctions';
 
-const routeOptimizer = async (src: Point, dest: Point) => {
+const routeOptimizer = async (
+  src: Point,
+  dest: Point,
+  opts?: {priority?: PriorityChoice}
+) => {
   const floydWarshallModel: FloydWarshallExport = JSON.parse(
     readFileSync('floyd-warshall-davao.json', 'utf-8')
   );
@@ -60,7 +64,17 @@ const routeOptimizer = async (src: Point, dest: Point) => {
   for (const oneRoute of sameRoutes) {
     const merged = mergeRoutes(src, dest, [oneRoute]);
 
-    outputRoutes.push(merged);
+    if (merged === null) {
+      continue;
+    }
+
+    if (
+      merged[0].distanceFromPoint(src) <= constants.MAXIMUM_WALKABLE_DISTANCE &&
+      merged[merged.length - 1].distanceFromPoint(dest) <=
+        constants.MAXIMUM_WALKABLE_DISTANCE
+    ) {
+      outputRoutes.push(merged);
+    }
   }
 
   console.log(`Number of possible Source Routes: ${sourceRoutes.length}`);
@@ -75,33 +89,71 @@ const routeOptimizer = async (src: Point, dest: Point) => {
 
       const merged = mergeRoutes(src, dest, trip);
 
-      outputRoutes.push(merged);
+      if (merged === null) {
+        continue;
+      }
+
+      if (
+        merged[0].distanceFromPoint(src) <=
+          constants.MAXIMUM_WALKABLE_DISTANCE &&
+        merged[merged.length - 1].distanceFromPoint(dest) <=
+          constants.MAXIMUM_WALKABLE_DISTANCE
+      ) {
+        outputRoutes.push(merged);
+      }
     }
+  }
+
+  let priority: PriorityChoice = 'Distance';
+  if (opts?.priority) {
+    priority = opts.priority;
   }
 
   outputRoutes.sort((a, b) => {
     let totalCostA = 0;
-    for (const routeA of a) {
-      if (routeA.isTricycle) {
-        totalCostA += constants.TRICYCLE_FARE;
-      } else {
-        totalCostA += constants.BASE_FARE;
-        totalCostA += routeA.totalDistance() * constants.FARE_PER_KILOMETER;
-      }
-    }
-
     let totalCostB = 0;
-    for (const routeB of b) {
-      if (routeB.isTricycle) {
-        totalCostB += constants.TRICYCLE_FARE;
-      } else {
-        totalCostB += constants.BASE_FARE;
-        totalCostB += routeB.totalDistance() * constants.FARE_PER_KILOMETER;
+    if (priority === 'Fare') {
+      for (const routeA of a) {
+        if (routeA.isTricycle) {
+          totalCostA += constants.TRICYCLE_FARE;
+        } else {
+          totalCostA += constants.BASE_FARE;
+          totalCostA += routeA.totalDistance() * constants.FARE_PER_KILOMETER;
+        }
       }
-    }
 
+      for (const routeB of b) {
+        if (routeB.isTricycle) {
+          totalCostB += constants.TRICYCLE_FARE;
+        } else {
+          totalCostB += constants.BASE_FARE;
+          totalCostB += routeB.totalDistance() * constants.FARE_PER_KILOMETER;
+        }
+      }
+    } else if (priority === 'Distance') {
+      for (const routeA of a) {
+        totalCostA += routeA.totalDistance();
+      }
+
+      for (const routeB of b) {
+        totalCostB += routeB.totalDistance();
+      }
+    } else if (priority === 'NumberOfTransfers') {
+      totalCostA += a.length;
+      totalCostB += b.length;
+    }
     return totalCostA - totalCostB;
   });
+
+  /*
+  outputRoutes = outputRoutes.filter(r => {
+    return (
+      r[0].distanceFromPoint(src) <= constants.MAXIMUM_WALKABLE_DISTANCE &&
+      r[r.length - 1].distanceFromPoint(dest) <=
+        constants.MAXIMUM_WALKABLE_DISTANCE
+    );
+  });
+  */
 
   const collections: GeoJSONCollection[] = [];
   for (const route of outputRoutes) {
