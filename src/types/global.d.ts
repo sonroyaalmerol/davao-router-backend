@@ -34,5 +34,5 @@ declare global {
     weight: number;
   };
 
-  type PriorityChoice = 'Distance' | 'NumberOfTransfers' | 'Fare';
+  type PriorityChoice = 'DISTANCE' | 'TRANSFERS' | 'FARE';
 }

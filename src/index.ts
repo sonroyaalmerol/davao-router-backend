@@ -16,18 +16,23 @@ console.timeEnd('File import');
 server.register(cors);
 
 type FindRequest = FastifyRequest<{
-  Querystring: {src: string; dest: string};
+  Querystring: {src: string; dest: string; priority?: string};
 }>;
 
 server.get('/find', async (request: FindRequest, reply: FastifyReply) => {
   const tmpSrc = request.query.src.split(',').map(i => parseFloat(i.trim()));
   const tmpDest = request.query.dest.split(',').map(i => parseFloat(i.trim()));
+  const priority: PriorityChoice | undefined = request.query.priority
+    ?.trim()
+    .toUpperCase() as PriorityChoice;
 
   const src = new Point(tmpSrc as Coordinate);
   const dest = new Point(tmpDest as Coordinate);
 
   console.time('Optimization time');
-  const output = await routeOptimizer(src, dest, floydWarshallModel);
+  const output = await routeOptimizer(src, dest, floydWarshallModel, {
+    priority,
+  });
   console.timeEnd('Optimization time');
 
   reply.code(200).header('Content-Type', 'application/json').send(output);

@@ -164,7 +164,7 @@ const routeOptimizer = async (
     }
   }
 
-  let priority: PriorityChoice = 'Fare';
+  let priority: PriorityChoice = 'FARE';
   if (opts?.priority) {
     priority = opts.priority;
   }
@@ -172,7 +172,7 @@ const routeOptimizer = async (
   outputRoutes.sort((a, b) => {
     let totalCostA = 0;
     let totalCostB = 0;
-    if (priority === 'Fare') {
+    if (priority === 'FARE') {
       for (const routeA of a) {
         if (routeA.isTricycle) {
           totalCostA += constants.TRICYCLE_FARE;
@@ -190,7 +190,7 @@ const routeOptimizer = async (
           totalCostB += routeB.totalDistance() * constants.FARE_PER_KILOMETER;
         }
       }
-    } else if (priority === 'Distance') {
+    } else if (priority === 'DISTANCE') {
       for (const routeA of a) {
         totalCostA += routeA.totalDistance();
       }
@@ -198,7 +198,7 @@ const routeOptimizer = async (
       for (const routeB of b) {
         totalCostB += routeB.totalDistance();
       }
-    } else if (priority === 'NumberOfTransfers') {
+    } else if (priority === 'TRANSFERS') {
       totalCostA += a.length;
       totalCostB += b.length;
     }
