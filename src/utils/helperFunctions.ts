@@ -16,19 +16,10 @@ const mergeRoutes = (
   }
   let initPoint = src;
   for (let i = 0; i < routes.length; i++) {
-    if (routes[i].isTricycle) {
-      outputRoutes.push(routes[i]);
-    }
-    // route A reverse?
-    let routeA = routes[i].differentStartPoint(initPoint);
-    let routeAReverse = routes[i].differentStartPoint(initPoint, {
+    const routeA = routes[i].differentStartPoint(initPoint);
+    const routeAReverse = routes[i].differentStartPoint(initPoint, {
       reverse: true,
     });
-
-    if (routes[i].isTricycle) {
-      routeA = routes[i];
-      routeAReverse = routes[i];
-    }
 
     if (routeA === null || routeAReverse === null) {
       return null;
@@ -140,9 +131,6 @@ const mergeRoutes = (
 
             if (fSegment.isWalkableTo(bSegment)) {
               fRoute.coordinates.push(routeA.coordinates[x + 1]);
-              if (routeA.coordinates[x + 2]) {
-                fRoute.coordinates.push(routeA.coordinates[x + 2]);
-              }
               fDone = true;
             }
           }
@@ -151,9 +139,6 @@ const mergeRoutes = (
 
             if (rSegment.isWalkableTo(bSegment)) {
               rRoute.coordinates.push(routeAReverse.coordinates[x + 1]);
-              if (routeAReverse.coordinates[x + 2]) {
-                fRoute.coordinates.push(routeAReverse.coordinates[x + 2]);
-              }
               rDone = true;
             }
           }
