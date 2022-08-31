@@ -7,10 +7,16 @@ export default class Graph {
     [key: string]: number;
   };
 
-  constructor() {
-    this.nodes = [];
-    this.edges = [];
-    this.nodeMap = {};
+  constructor(
+    nodes?: Route[],
+    edges?: Edge[],
+    nodeMap?: {
+      [key: string]: number;
+    }
+  ) {
+    this.nodes = nodes ?? [];
+    this.edges = edges ?? [];
+    this.nodeMap = nodeMap ?? {};
   }
 
   addNode(route: Route) {
@@ -32,4 +38,20 @@ export default class Graph {
     this.edges.filter(edge => edge.u.equals(routeA) && edge.v.equals(routeB));
   }
   */
+
+  findNeighbors(route: Route): Route[] {
+    let neighbors: Route[] = [];
+
+    for (const edge of this.edges) {
+      if (edge.u.equals(route)) {
+        neighbors = neighbors.filter(n => n.name !== edge.v.name);
+        neighbors.push(edge.v);
+      } else if (edge.v.equals(route)) {
+        neighbors = neighbors.filter(n => n.name !== edge.u.name);
+        neighbors.push(edge.u);
+      }
+    }
+
+    return neighbors;
+  }
 }

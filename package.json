@@ -22,7 +22,8 @@
     "@fastify/cors": "^8.1.0",
     "@turf/turf": "^6.5.0",
     "big-json": "^3.1.0",
-    "fastify": "^4.5.2"
+    "fastify": "^4.5.2",
+    "memfs": "^3.4.7"
   },
   "engines": {
     "node": ">=11.14.0"

@@ -1,4 +1,4 @@
-import {readFileSync} from 'fs';
+import Graph from './classes/graph';
 import Point from './classes/point';
 import Route from './classes/route';
 import constants from './constants';
@@ -6,13 +6,13 @@ import {floydWarshallPathReconstruction} from './floydWarshall';
 import {mergeRoutes} from './utils/helperFunctions';
 
 const routeOptimizer = async (
-  src: Point,
-  dest: Point,
+  tmpSrc: Point,
+  tmpDest: Point,
+  floydWarshallModel: FloydWarshallExport,
   opts?: {priority?: PriorityChoice}
 ) => {
-  const floydWarshallModel: FloydWarshallExport = JSON.parse(
-    readFileSync('floyd-warshall-davao.json', 'utf-8')
-  );
+  let src: Point = tmpSrc;
+  let dest: Point = tmpDest;
 
   floydWarshallModel.g.nodes = floydWarshallModel.g.nodes.map(
     rawNode =>
@@ -37,20 +37,67 @@ const routeOptimizer = async (
     weight: rawEdge.weight,
   }));
 
-  const sourceRoutes = floydWarshallModel.g.nodes.filter(route => {
-    console.log(route.isInside(src));
-    return (
-      route.distanceFromPoint(src) <= constants.MAXIMUM_WALKABLE_DISTANCE ||
-      route.isInside(src)
-    );
+  const graph = new Graph(
+    floydWarshallModel.g.nodes,
+    floydWarshallModel.g.edges
+  );
+
+  const tricycleRoutes = graph.nodes.filter(r => r.isTricycle);
+
+  let tricycleAreaSrc: Route | null = null;
+  let tricycleAreaDest: Route | null = null;
+  for (const area of tricycleRoutes) {
+    if (area.isInside(src)) {
+      tricycleAreaSrc = area;
+    }
+    if (area.isInside(dest)) {
+      tricycleAreaDest = area;
+    }
+
+    if (tricycleAreaSrc !== null && tricycleAreaDest !== null) {
+      break;
+    }
+  }
+
+  let sourceRoutes = graph.nodes.filter(route => {
+    return route.distanceFromPoint(src) <= constants.MAXIMUM_WALKABLE_DISTANCE;
   });
 
-  const tmpDestRoutes = floydWarshallModel.g.nodes.filter(route => {
-    return (
-      route.distanceFromPoint(dest) <= constants.MAXIMUM_WALKABLE_DISTANCE ||
-      route.isInside(dest)
-    );
+  if (tricycleAreaSrc !== null) {
+    const nearJeepneys = graph.findNeighbors(tricycleAreaSrc);
+    sourceRoutes = nearJeepneys;
+
+    for (const coord of tricycleAreaSrc.coordinates) {
+      if (
+        sourceRoutes.filter(
+          r => r.distanceFromPoint(coord) <= constants.MAXIMUM_WALKABLE_DISTANCE
+        ).length > 0
+      ) {
+        src = coord;
+        break;
+      }
+    }
+  }
+
+  let tmpDestRoutes = graph.nodes.filter(route => {
+    return route.distanceFromPoint(dest) <= constants.MAXIMUM_WALKABLE_DISTANCE;
   });
+
+  if (tricycleAreaDest !== null) {
+    const nearJeepneys = graph.findNeighbors(tricycleAreaDest);
+    tmpDestRoutes = nearJeepneys;
+
+    for (const coord of tricycleAreaDest.coordinates) {
+      if (
+        tmpDestRoutes.filter(
+          r => r.distanceFromPoint(coord) <= constants.MAXIMUM_WALKABLE_DISTANCE
+        ).length > 0
+      ) {
+        dest = coord;
+        break;
+      }
+    }
+  }
 
   const destRoutes = tmpDestRoutes.filter(
     route => sourceRoutes.filter(src => src.equals(route)).length === 0
@@ -63,19 +110,22 @@ const routeOptimizer = async (
   const outputRoutes: Route[][] = [];
 
   for (const oneRoute of sameRoutes) {
-    const merged = mergeRoutes(src, dest, [oneRoute]);
+    const merged = mergeRoutes(
+      src,
+      dest,
+      [oneRoute],
+      tricycleAreaSrc,
+      tricycleAreaDest
+    );
 
     if (merged === null) {
       continue;
     }
 
     if (
-      (merged[0].distanceFromPoint(src) <=
-        constants.MAXIMUM_WALKABLE_DISTANCE ||
-        merged[0].isInside(src)) &&
-      (merged[merged.length - 1].distanceFromPoint(dest) <=
-        constants.MAXIMUM_WALKABLE_DISTANCE ||
-        merged[merged.length - 1].isInside(dest))
+      merged[0].distanceFromPoint(src) <= constants.MAXIMUM_WALKABLE_DISTANCE &&
+      merged[merged.length - 1].distanceFromPoint(dest) <=
+        constants.MAXIMUM_WALKABLE_DISTANCE
     ) {
       outputRoutes.push(merged);
     }
@@ -91,19 +141,23 @@ const routeOptimizer = async (
         floydWarshallModel
       );
 
-      const merged = mergeRoutes(src, dest, trip);
+      const merged = mergeRoutes(
+        src,
+        dest,
+        trip,
+        tricycleAreaSrc,
+        tricycleAreaDest
+      );
 
       if (merged === null) {
         continue;
       }
 
       if (
-        (merged[0].distanceFromPoint(src) <=
-          constants.MAXIMUM_WALKABLE_DISTANCE ||
-          merged[0].isInside(src)) &&
-        (merged[merged.length - 1].distanceFromPoint(dest) <=
-          constants.MAXIMUM_WALKABLE_DISTANCE ||
-          merged[merged.length - 1].isInside(dest))
+        merged[0].distanceFromPoint(src) <=
+          constants.MAXIMUM_WALKABLE_DISTANCE &&
+        merged[merged.length - 1].distanceFromPoint(dest) <=
+          constants.MAXIMUM_WALKABLE_DISTANCE
       ) {
         outputRoutes.push(merged);
       }

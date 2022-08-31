@@ -20,7 +20,11 @@ import {floydWarshallMatrixGenerate} from './floydWarshall';
     for (const route2 of g.nodes) {
       if (route1.equals(route2)) continue;
       if (route1.isWalkableTo(route2)) {
-        g.addEdge(route1, route2, 1);
+        g.addEdge(
+          route1,
+          route2,
+          route1.totalDistance() / 2 + route2.totalDistance() / 2
+        );
       }
     }
   }

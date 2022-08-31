@@ -2,8 +2,18 @@ import Point from '../classes/point';
 import Route from '../classes/route';
 import constants from '../constants';
 
-const mergeRoutes = (src: Point, dest: Point, routes: Route[]) => {
+const mergeRoutes = (
+  src: Point,
+  dest: Point,
+  routes: Route[],
+  srcTricycleArea?: Route | null,
+  destTricycleArea?: Route | null
+) => {
   const outputRoutes: Route[] = [];
+
+  if (srcTricycleArea) {
+    outputRoutes.push(srcTricycleArea);
+  }
   let initPoint = src;
   for (let i = 0; i < routes.length; i++) {
     if (routes[i].isTricycle) {
@@ -130,6 +140,9 @@ const mergeRoutes = (src: Point, dest: Point, routes: Route[]) => {
 
             if (fSegment.isWalkableTo(bSegment)) {
               fRoute.coordinates.push(routeA.coordinates[x + 1]);
+              if (routeA.coordinates[x + 2]) {
+                fRoute.coordinates.push(routeA.coordinates[x + 2]);
+              }
               fDone = true;
             }
           }
@@ -138,6 +151,9 @@ const mergeRoutes = (src: Point, dest: Point, routes: Route[]) => {
 
             if (rSegment.isWalkableTo(bSegment)) {
               rRoute.coordinates.push(routeAReverse.coordinates[x + 1]);
+              if (routeAReverse.coordinates[x + 2]) {
+                fRoute.coordinates.push(routeAReverse.coordinates[x + 2]);
+              }
               rDone = true;
             }
           }
@@ -150,77 +166,11 @@ const mergeRoutes = (src: Point, dest: Point, routes: Route[]) => {
     }
   }
 
-  return outputRoutes;
-};
-
-/*
-const oldMergeRoutes = (src: Point, dest: Point, routes: Route[]) => {
-  const outputRoutes: Route[] = [];
-  let initPoint = src;
-  for (let i = 0; i < routes.length; i++) {
-    // route A reverse?
-    const routeA = routes[i].differentStartPoint(initPoint);
-    let routeB: Route | null = null;
-
-    if (i + 1 < routes.length) {
-      routeB = routes[i + 1];
-    }
-
-    if (routeB === null) {
-      const tmpLastTrip = routeA.splitFromSourceToPoint(dest);
-      const tmpLastTripReversed = routes[i]
-        .differentStartPoint(initPoint, {reverse: true})
-        .splitFromSourceToPoint(dest);
-
-      if (tmpLastTrip.totalDistance() < tmpLastTripReversed.totalDistance()) {
-        outputRoutes.push(tmpLastTrip);
-      } else {
-        outputRoutes.push(tmpLastTripReversed);
-      }
-
-      break;
-    }
-
-    let done = false;
-    for (let x = 0; x < routeA.coordinates.length - 1; x++) {
-      if (done) break;
-      const segmentA = new Route(`${routeA.name} - ${x + 1}`, [
-        routeA.coordinates[x],
-        routeA.coordinates[x + 1],
-      ]);
-      for (let y = 0; y < routeB.coordinates.length - 1; y++) {
-        const segmentB = new Route(`${routeB.name} - ${y + 1}`, [
-          routeB.coordinates[y],
-          routeB.coordinates[y + 1],
-        ]);
-
-        if (segmentA.isWalkableTo(segmentB)) {
-          let tmpTripRoute = routeA.splitFromSourceToPoint(
-            segmentB.coordinates[0]
-          );
-          const tmpTripRouteReversed = routes[i]
-            .differentStartPoint(initPoint, {reverse: true})
-            .splitFromSourceToPoint(segmentB.coordinates[0]);
-
-          if (
-            tmpTripRoute.totalDistance() > tmpTripRouteReversed.totalDistance()
-          ) {
-            tmpTripRoute = tmpTripRouteReversed;
-          }
-
-          if (tmpTripRoute.coordinates.length > 1) {
-            initPoint = segmentB.coordinates[0];
-            outputRoutes.push(tmpTripRoute);
-            done = true;
-            break;
-          }
-        }
-      }
-    }
+  if (destTricycleArea) {
+    outputRoutes.push(destTricycleArea);
   }
 
   return outputRoutes;
 };
-*/
 
 export {mergeRoutes};
