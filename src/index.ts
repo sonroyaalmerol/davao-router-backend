@@ -4,6 +4,7 @@ import Point from './classes/point';
 import routeOptimizer from './routeOptimizer';
 import cors from '@fastify/cors';
 import {readFileSync} from 'fs';
+import constants from './constants';
 
 const server = fastify();
 
@@ -36,18 +37,59 @@ server.get('/find', async (request: FindRequest, reply: FastifyReply) => {
 
   let floydWarshallModel = transferModel;
   if (priority === 'DISTANCE') {
-    console.log('using distance model');
     floydWarshallModel = distanceModel;
   }
 
-  console.log('test');
+  let results: GeoJSONCollection[] = [];
+  let sourceRadius = constants.MAXIMUM_WALKABLE_DISTANCE;
+  let destinationRadius = constants.MAXIMUM_WALKABLE_DISTANCE;
+  let srcDone = false;
+  let destDone = false;
+  while (results.length === 0) {
+    if (destDone && srcDone) {
+      break;
+    }
 
-  const output = await routeOptimizer(src, dest, floydWarshallModel, {
-    priority,
-  });
+    const {source, destination, output} = await routeOptimizer(
+      src,
+      dest,
+      floydWarshallModel,
+      {
+        priority,
+        srcWalkableDistance: sourceRadius,
+        destWalkableDistance: destinationRadius,
+      }
+    );
+
+    if (
+      (source.length === 0 ||
+        (source.length > 0 &&
+          destination.length > 0 &&
+          results.length === 0)) &&
+      sourceRadius < constants.MAXIMUM_ALLOWABLE_DISTANCE
+    ) {
+      sourceRadius += 0.2;
+    } else {
+      srcDone = true;
+    }
+
+    if (
+      (destination.length === 0 ||
+        (source.length > 0 &&
+          destination.length > 0 &&
+          results.length === 0)) &&
+      destinationRadius < constants.MAXIMUM_ALLOWABLE_DISTANCE
+    ) {
+      destinationRadius += 0.2;
+    } else {
+      destDone = true;
+    }
+    results = output;
+  }
+
   console.timeEnd('Optimization time');
 
-  reply.code(200).header('Content-Type', 'application/json').send(output);
+  reply.code(200).header('Content-Type', 'application/json').send(results);
 });
 
 server.listen({port: 8080}, (err, address) => {

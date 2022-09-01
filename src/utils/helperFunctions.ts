@@ -8,12 +8,15 @@ const mergeRoutes = (
   routes: Route[],
   srcTricycleArea?: Route | null,
   destTricycleArea?: Route | null,
-  walkableDistance?: number
+  srcWalkableDistance?: number,
+  destWalkableDistance?: number
 ) => {
   const outputRoutes: Route[] = [];
 
-  const walkingDistance =
-    walkableDistance ?? constants.MAXIMUM_WALKABLE_DISTANCE;
+  const srcWalkingDistance =
+    srcWalkableDistance ?? constants.MAXIMUM_WALKABLE_DISTANCE;
+  const destWalkingDistance =
+    destWalkableDistance ?? constants.MAXIMUM_WALKABLE_DISTANCE;
 
   if (srcTricycleArea) {
     outputRoutes.push(srcTricycleArea);
@@ -21,11 +24,13 @@ const mergeRoutes = (
   let initPoint = src;
   for (let i = 0; i < routes.length; i++) {
     const routeA = routes[i].differentStartPoint(initPoint, {
-      walkableDistance: walkingDistance,
+      walkableDistance:
+        i === 0 ? srcWalkingDistance : constants.MAXIMUM_WALKABLE_DISTANCE,
     });
     const routeAReverse = routes[i].differentStartPoint(initPoint, {
       reverse: true,
-      walkableDistance: walkingDistance,
+      walkableDistance:
+        i === 0 ? srcWalkingDistance : constants.MAXIMUM_WALKABLE_DISTANCE,
     });
 
     if (routeA === null || routeAReverse === null) {
@@ -78,10 +83,7 @@ const mergeRoutes = (
           fRoute.coordinates.push(routeA.coordinates[x]);
 
           if (!fChecking) {
-            if (
-              fSegment.distanceFromPoint(dest) <=
-              constants.MAXIMUM_WALKABLE_DISTANCE
-            ) {
+            if (fSegment.distanceFromPoint(dest) <= destWalkingDistance) {
               fClosestSegment = fSegment;
               fChecking = true;
             }
@@ -92,7 +94,9 @@ const mergeRoutes = (
                 fClosestSegment.distanceFromPoint(dest)
               ) {
                 fRoute.coordinates[fRoute.coordinates.length - 1] =
-                  fClosestSegment.nearestPointFromRoute(dest).point;
+                  fClosestSegment.nearestPointFromRoute(dest, {
+                    walkableDistance: destWalkingDistance,
+                  }).point;
                 fDone = true;
               } else {
                 fClosestSegment = fSegment;
@@ -104,10 +108,7 @@ const mergeRoutes = (
           rRoute.coordinates.push(routeAReverse.coordinates[x]);
 
           if (!rChecking) {
-            if (
-              rSegment.distanceFromPoint(dest) <=
-              constants.MAXIMUM_WALKABLE_DISTANCE
-            ) {
+            if (rSegment.distanceFromPoint(dest) <= destWalkingDistance) {
               rClosestSegment = rSegment;
               rChecking = true;
             }
@@ -118,7 +119,9 @@ const mergeRoutes = (
                 rClosestSegment.distanceFromPoint(dest)
               ) {
                 rRoute.coordinates[rRoute.coordinates.length - 1] =
-                  rClosestSegment.nearestPointFromRoute(dest).point;
+                  rClosestSegment.nearestPointFromRoute(dest, {
+                    walkableDistance: destWalkingDistance,
+                  }).point;
                 rDone = true;
               } else {
                 rClosestSegment = rSegment;
