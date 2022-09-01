@@ -225,7 +225,10 @@ export default class Route {
     return false;
   }
 
-  getDistanceNearestWalkable(route: Route) {
+  getDistanceNearestWalkable(route: Route, walkableDistance?: number) {
+    const distanceRadius =
+      walkableDistance ?? constants.MAXIMUM_WALKABLE_DISTANCE;
+
     let distance = 0;
     let distanceReversed = 0;
 
@@ -299,16 +302,11 @@ export default class Route {
           segmentBReversed.coordinates[1]
         ) as number;
 
-        if (
-          Math.min(a, b, c, d, cr, dr) < constants.MAXIMUM_WALKABLE_DISTANCE
-        ) {
+        if (Math.min(a, b, c, d, cr, dr) < distanceRadius) {
           return distance;
         }
 
-        if (
-          Math.min(ar, br, arr, brr, crr, drr) <
-          constants.MAXIMUM_WALKABLE_DISTANCE
-        ) {
+        if (Math.min(ar, br, arr, brr, crr, drr) < distanceRadius) {
           return distanceReversed;
         }
       }

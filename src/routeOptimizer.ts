@@ -172,7 +172,7 @@ const routeOptimizer = async (
   outputRoutes.sort((a, b) => {
     let totalCostA = 0;
     let totalCostB = 0;
-    if (priority === 'FARE') {
+    if (priority === 'FARE' || priority === 'TRANSFERS') {
       for (const routeA of a) {
         if (routeA.isTricycle) {
           totalCostA += constants.TRICYCLE_FARE;
@@ -198,9 +198,6 @@ const routeOptimizer = async (
       for (const routeB of b) {
         totalCostB += routeB.totalDistance();
       }
-    } else if (priority === 'TRANSFERS') {
-      totalCostA += a.length;
-      totalCostB += b.length;
     }
     return totalCostA - totalCostB;
   });
