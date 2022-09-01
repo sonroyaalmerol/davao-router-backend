@@ -31,7 +31,6 @@ export default class Graph {
 
   addEdge(routeA: Route, routeB: Route, weight: number) {
     this.edges.push({u: routeA, v: routeB, weight});
-    this.edges.push({v: routeA, u: routeB, weight});
   }
   /*
   removeEdge(routeA: Route, routeB: Route) {

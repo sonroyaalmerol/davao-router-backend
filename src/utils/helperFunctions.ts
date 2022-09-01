@@ -7,18 +7,25 @@ const mergeRoutes = (
   dest: Point,
   routes: Route[],
   srcTricycleArea?: Route | null,
-  destTricycleArea?: Route | null
+  destTricycleArea?: Route | null,
+  walkableDistance?: number
 ) => {
   const outputRoutes: Route[] = [];
+
+  const walkingDistance =
+    walkableDistance ?? constants.MAXIMUM_WALKABLE_DISTANCE;
 
   if (srcTricycleArea) {
     outputRoutes.push(srcTricycleArea);
   }
   let initPoint = src;
   for (let i = 0; i < routes.length; i++) {
-    const routeA = routes[i].differentStartPoint(initPoint);
+    const routeA = routes[i].differentStartPoint(initPoint, {
+      walkableDistance: walkingDistance,
+    });
     const routeAReverse = routes[i].differentStartPoint(initPoint, {
       reverse: true,
+      walkableDistance: walkingDistance,
     });
 
     if (routeA === null || routeAReverse === null) {

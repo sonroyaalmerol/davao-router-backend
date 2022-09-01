@@ -9,10 +9,13 @@ const routeOptimizer = async (
   tmpSrc: Point,
   tmpDest: Point,
   floydWarshallModel: FloydWarshallExport,
-  opts?: {priority?: PriorityChoice}
+  opts?: {priority?: PriorityChoice; walkableDistance?: number}
 ) => {
   let src: Point = tmpSrc;
   let dest: Point = tmpDest;
+
+  const walkingDistance =
+    opts?.walkableDistance ?? constants.MAXIMUM_WALKABLE_DISTANCE;
 
   floydWarshallModel.g.nodes = floydWarshallModel.g.nodes.map(
     rawNode =>
@@ -60,7 +63,7 @@ const routeOptimizer = async (
   }
 
   let sourceRoutes = graph.nodes.filter(route => {
-    return route.distanceFromPoint(src) <= constants.MAXIMUM_WALKABLE_DISTANCE;
+    return route.distanceFromPoint(src) <= walkingDistance;
   });
 
   if (tricycleAreaSrc !== null) {
@@ -69,9 +72,8 @@ const routeOptimizer = async (
 
     for (const coord of tricycleAreaSrc.coordinates) {
       if (
-        sourceRoutes.filter(
-          r => r.distanceFromPoint(coord) <= constants.MAXIMUM_WALKABLE_DISTANCE
-        ).length > 0
+        sourceRoutes.filter(r => r.distanceFromPoint(coord) <= walkingDistance)
+          .length > 0
       ) {
         src = coord;
         break;
@@ -80,7 +82,7 @@ const routeOptimizer = async (
   }
 
   let tmpDestRoutes = graph.nodes.filter(route => {
-    return route.distanceFromPoint(dest) <= constants.MAXIMUM_WALKABLE_DISTANCE;
+    return route.distanceFromPoint(dest) <= walkingDistance;
   });
 
   if (tricycleAreaDest !== null) {
@@ -89,9 +91,8 @@ const routeOptimizer = async (
 
     for (const coord of tricycleAreaDest.coordinates) {
       if (
-        tmpDestRoutes.filter(
-          r => r.distanceFromPoint(coord) <= constants.MAXIMUM_WALKABLE_DISTANCE
-        ).length > 0
+        tmpDestRoutes.filter(r => r.distanceFromPoint(coord) <= walkingDistance)
+          .length > 0
       ) {
         dest = coord;
         break;
@@ -115,7 +116,8 @@ const routeOptimizer = async (
       dest,
       [oneRoute],
       tricycleAreaSrc,
-      tricycleAreaDest
+      tricycleAreaDest,
+      walkingDistance
     );
 
     if (merged === null) {
@@ -123,9 +125,8 @@ const routeOptimizer = async (
     }
 
     if (
-      merged[0].distanceFromPoint(src) <= constants.MAXIMUM_WALKABLE_DISTANCE &&
-      merged[merged.length - 1].distanceFromPoint(dest) <=
-        constants.MAXIMUM_WALKABLE_DISTANCE
+      merged[0].distanceFromPoint(src) <= walkingDistance &&
+      merged[merged.length - 1].distanceFromPoint(dest) <= walkingDistance
     ) {
       outputRoutes.push(merged);
     }
@@ -146,7 +147,8 @@ const routeOptimizer = async (
         dest,
         trip,
         tricycleAreaSrc,
-        tricycleAreaDest
+        tricycleAreaDest,
+        walkingDistance
       );
 
       if (merged === null) {
@@ -154,10 +156,8 @@ const routeOptimizer = async (
       }
 
       if (
-        merged[0].distanceFromPoint(src) <=
-          constants.MAXIMUM_WALKABLE_DISTANCE &&
-        merged[merged.length - 1].distanceFromPoint(dest) <=
-          constants.MAXIMUM_WALKABLE_DISTANCE
+        merged[0].distanceFromPoint(src) <= walkingDistance &&
+        merged[merged.length - 1].distanceFromPoint(dest) <= walkingDistance
       ) {
         outputRoutes.push(merged);
       }

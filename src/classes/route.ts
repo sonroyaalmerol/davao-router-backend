@@ -33,7 +33,7 @@ export default class Route {
 
   nearestPointFromRoute(
     tmpPt: Point,
-    opts?: {reverse: boolean}
+    opts?: {reverse?: boolean; walkableDistance?: number}
   ): {segment: Route; point: Point} {
     let closestSegment: Route;
 
@@ -52,7 +52,7 @@ export default class Route {
       if (!checkingNearest) {
         if (
           segment.distanceFromPoint(tmpPt) <=
-          constants.MAXIMUM_WALKABLE_DISTANCE
+          (opts?.walkableDistance ?? constants.MAXIMUM_WALKABLE_DISTANCE)
         ) {
           checkingNearest = true;
           closestSegment = segment;
@@ -211,10 +211,10 @@ export default class Route {
           return true;
         }
 
-        const a = route.distanceFromPoint(segmentA.coordinates[0]) as number;
-        const b = route.distanceFromPoint(segmentA.coordinates[1]) as number;
-        const c = this.distanceFromPoint(segmentB.coordinates[0]) as number;
-        const d = this.distanceFromPoint(segmentB.coordinates[1]) as number;
+        const a = segmentB.distanceFromPoint(segmentA.coordinates[0]) as number;
+        const b = segmentB.distanceFromPoint(segmentA.coordinates[1]) as number;
+        const c = segmentA.distanceFromPoint(segmentB.coordinates[0]) as number;
+        const d = segmentA.distanceFromPoint(segmentB.coordinates[1]) as number;
 
         if (Math.min(a, b, c, d) < constants.MAXIMUM_WALKABLE_DISTANCE) {
           return true;
@@ -225,7 +225,102 @@ export default class Route {
     return false;
   }
 
-  differentStartPoint(p: Point, opts?: {reverse: boolean}) {
+  getDistanceNearestWalkable(route: Route) {
+    let distance = 0;
+    let distanceReversed = 0;
+
+    for (let i = 0; i < this.coordinates.length - 1; i++) {
+      const segmentA = new Route(`${this.name} - ${i + 1}`, [
+        this.coordinates[i],
+        this.coordinates[i + 1],
+      ]);
+
+      const segmentAReversed = new Route(`${this.name} - ${i + 1}`, [
+        this.coordinates[this.coordinates.length - (1 + i)],
+        this.coordinates[this.coordinates.length - (2 + i)],
+      ]);
+
+      distance += segmentA.totalDistance();
+      distanceReversed += segmentAReversed.totalDistance();
+
+      for (let j = 0; j < route.coordinates.length - 1; j++) {
+        const segmentB = new Route(`${route.name} - ${j + 1}`, [
+          route.coordinates[j],
+          route.coordinates[j + 1],
+        ]);
+
+        const segmentBReversed = new Route(`${route.name} - ${j + 1}`, [
+          route.coordinates[route.coordinates.length - (1 + j)],
+          route.coordinates[route.coordinates.length - (1 + j)],
+        ]);
+
+        if (
+          segmentA.intersects(segmentB) ||
+          segmentA.intersects(segmentBReversed)
+        ) {
+          return distance;
+        }
+
+        if (
+          segmentAReversed.intersects(segmentB) ||
+          segmentAReversed.intersects(segmentBReversed)
+        ) {
+          return distanceReversed;
+        }
+
+        const a = segmentB.distanceFromPoint(segmentA.coordinates[0]) as number;
+        const b = segmentB.distanceFromPoint(segmentA.coordinates[1]) as number;
+        const c = segmentA.distanceFromPoint(segmentB.coordinates[0]) as number;
+        const d = segmentA.distanceFromPoint(segmentB.coordinates[1]) as number;
+
+        const ar = segmentB.distanceFromPoint(
+          segmentAReversed.coordinates[0]
+        ) as number;
+        const br = segmentB.distanceFromPoint(
+          segmentAReversed.coordinates[1]
+        ) as number;
+        const cr = segmentA.distanceFromPoint(
+          segmentBReversed.coordinates[0]
+        ) as number;
+        const dr = segmentA.distanceFromPoint(
+          segmentBReversed.coordinates[1]
+        ) as number;
+
+        const arr = segmentBReversed.distanceFromPoint(
+          segmentAReversed.coordinates[0]
+        ) as number;
+        const brr = segmentBReversed.distanceFromPoint(
+          segmentAReversed.coordinates[1]
+        ) as number;
+        const crr = segmentAReversed.distanceFromPoint(
+          segmentBReversed.coordinates[0]
+        ) as number;
+        const drr = segmentAReversed.distanceFromPoint(
+          segmentBReversed.coordinates[1]
+        ) as number;
+
+        if (
+          Math.min(a, b, c, d, cr, dr) < constants.MAXIMUM_WALKABLE_DISTANCE
+        ) {
+          return distance;
+        }
+
+        if (
+          Math.min(ar, br, arr, brr, crr, drr) <
+          constants.MAXIMUM_WALKABLE_DISTANCE
+        ) {
+          return distanceReversed;
+        }
+      }
+    }
+
+    return -1;
+  }
+
+  differentStartPoint(
+    p: Point,
+    opts?: {reverse?: boolean; walkableDistance?: number}
+  ) {
     const closest = this.nearestPointFromRoute(p, opts);
     if (closest.segment.name === 'undefined') {
       return null;
