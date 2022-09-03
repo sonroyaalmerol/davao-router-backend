@@ -304,12 +304,12 @@ export default class Route {
 
         const minA = Math.min(a, b, c, d, cr, dr);
         if (minA < distanceRadius) {
-          return Math.round((distance + minA) * 10) / 10;
+          return Math.round(distance + minA);
         }
 
         const minB = Math.min(ar, br, arr, brr, crr, drr);
         if (minB < distanceRadius) {
-          return Math.round((distanceReversed + minB) * 10) / 10;
+          return Math.round(distanceReversed + minB);
         }
       }
     }
