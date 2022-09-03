@@ -242,6 +242,15 @@ const routeOptimizer = async (
         }
       }
     }
+
+    if (priority === 'DISTANCE') {
+      if (
+        Math.abs(totalCostA - totalCostB) < constants.MAXIMUM_WALKABLE_DISTANCE
+      ) {
+        return a.length - b.length;
+      }
+    }
+
     return totalCostA - totalCostB;
   });
 
