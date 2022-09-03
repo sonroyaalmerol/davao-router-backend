@@ -202,12 +202,44 @@ const routeOptimizer = async (
         }
       }
     } else if (priority === 'DISTANCE') {
-      for (const routeA of a) {
+      for (let i = 0; i < a.length; i++) {
+        const routeA = a[i];
+
+        if (i === 0) {
+          totalCostA += routeA.coordinates[0].distanceFrom(src);
+        } else if (i === a.length - 1) {
+          totalCostA +=
+            routeA.coordinates[routeA.coordinates.length - 1].distanceFrom(
+              dest
+            );
+        }
+
         totalCostA += routeA.totalDistance();
+        if (i + 1 < a.length) {
+          totalCostA += a[i + 1].coordinates[0].distanceFrom(
+            routeA.coordinates[routeA.coordinates.length - 1]
+          );
+        }
       }
 
-      for (const routeB of b) {
+      for (let i = 0; i < b.length; i++) {
+        const routeB = b[i];
+
+        if (i === 0) {
+          totalCostB += routeB.coordinates[0].distanceFrom(src);
+        } else if (i === b.length - 1) {
+          totalCostB +=
+            routeB.coordinates[routeB.coordinates.length - 1].distanceFrom(
+              dest
+            );
+        }
+
         totalCostB += routeB.totalDistance();
+        if (i + 1 < b.length) {
+          totalCostB += b[i + 1].coordinates[0].distanceFrom(
+            routeB.coordinates[routeB.coordinates.length - 1]
+          );
+        }
       }
     }
     return totalCostA - totalCostB;
