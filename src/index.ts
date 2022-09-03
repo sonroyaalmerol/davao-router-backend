@@ -9,9 +9,9 @@ import constants from './constants';
 const server = fastify();
 
 console.time('File import');
-const distanceModel: FloydWarshallExport = JSON.parse(
+/* const distanceModel: FloydWarshallExport = JSON.parse(
   readFileSync('floyd-warshall-davao-distance.json', 'utf-8')
-);
+); */
 const transferModel: FloydWarshallExport = JSON.parse(
   readFileSync('floyd-warshall-davao-transfer.json', 'utf-8')
 );
@@ -35,10 +35,10 @@ server.get('/find', async (request: FindRequest, reply: FastifyReply) => {
 
   console.time('Optimization time');
 
-  let floydWarshallModel = transferModel;
-  if (priority === 'DISTANCE') {
+  const floydWarshallModel = transferModel;
+  /* if (priority === 'DISTANCE') {
     floydWarshallModel = distanceModel;
-  }
+  } */
 
   let results: GeoJSONCollection[] = [];
   let sourceRadius = constants.MAXIMUM_WALKABLE_DISTANCE;
