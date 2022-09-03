@@ -302,12 +302,14 @@ export default class Route {
           segmentBReversed.coordinates[1]
         ) as number;
 
-        if (Math.min(a, b, c, d, cr, dr) < distanceRadius) {
-          return distance;
+        const minA = Math.min(a, b, c, d, cr, dr);
+        if (minA < distanceRadius) {
+          return distance + minA;
         }
 
-        if (Math.min(ar, br, arr, brr, crr, drr) < distanceRadius) {
-          return distanceReversed;
+        const minB = Math.min(ar, br, arr, brr, crr, drr);
+        if (minB < distanceRadius) {
+          return distanceReversed + minB;
         }
       }
     }
