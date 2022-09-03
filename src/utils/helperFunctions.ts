@@ -2,6 +2,7 @@ import Point from '../classes/point';
 import Route from '../classes/route';
 import constants from '../constants';
 
+// TODO: fix extended routes in connections
 const mergeRoutes = (
   src: Point,
   dest: Point,
