@@ -22,8 +22,12 @@ import {floydWarshallMatrixGenerate} from './floydWarshall';
   for (const route1 of gDistance.nodes) {
     for (const route2 of gDistance.nodes) {
       if (route1.equals(route2)) continue;
-      // TODO: add rest of the distance from other route
-      const edge = route1.getDistanceNearestWalkable(route2);
+      let edge = -1;
+      const tmpEdge = route1.getDistanceNearestWalkable(route2);
+      if (tmpEdge !== -1) {
+        edge = tmpEdge + route2.getDistanceNearestWalkable(route1);
+      }
+      // console.log(`${route1.name} - ${route2.name}: ${edge}`);
       if (edge !== -1) {
         gDistance.addEdge(route1, route2, edge);
         gTransfers.addEdge(
