@@ -225,7 +225,13 @@ server.get('/simulate', async (request: FindRequest, reply: FastifyReply) => {
     };
   };
 
-  const output: {
+  const output1: {
+    source: string;
+    destination: string;
+    numberOfRoutes: number;
+    time: number;
+  }[] = [];
+  const output2: {
     source: string;
     destination: string;
     numberOfRoutes: number;
@@ -243,14 +249,14 @@ server.get('/simulate', async (request: FindRequest, reply: FastifyReply) => {
         [wRoute.lat, wRoute.long]
       );
 
-      output.push({
+      output1.push({
         source: wRoute.name,
         destination: eRoute.name,
         numberOfRoutes: wResults.numberOfRoutes,
         time: wResults.time,
       });
 
-      output.push({
+      output2.push({
         source: eRoute.name,
         destination: wRoute.name,
         numberOfRoutes: eResults.numberOfRoutes,
@@ -259,7 +265,7 @@ server.get('/simulate', async (request: FindRequest, reply: FastifyReply) => {
     }
   }
 
-  const csv = Papa.unparse(output);
+  const csv = Papa.unparse([...output1, ...output2]);
 
   reply.code(200).header('Content-Type', 'text/csv').send(csv);
 });
