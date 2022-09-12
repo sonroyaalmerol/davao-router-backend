@@ -102,9 +102,9 @@ server.get('/simulate', async (request: FindRequest, reply: FastifyReply) => {
       lat: 7.041278050000001,
     },
     {
-      name: 'Gaisano Mall of Toril',
-      long: 125.49379598716507,
-      lat: 7.01643615,
+      name: 'Green Meadows',
+      long: 125.51123021372862,
+      lat: 7.0797439,
     },
     {
       name: 'Gulf View Executive Homes',
@@ -115,11 +115,6 @@ server.get('/simulate', async (request: FindRequest, reply: FastifyReply) => {
       name: 'Savemore Bangkal',
       long: 125.55893831297556,
       lat: 7.060514850000001,
-    },
-    {
-      name: 'Ateneo de Davao Senior High',
-      long: 125.55712382382788,
-      lat: 7.05845535,
     },
     {
       name: 'GSIS Heights',
@@ -140,11 +135,6 @@ server.get('/simulate', async (request: FindRequest, reply: FastifyReply) => {
       lat: 7.0529355,
     },
     {
-      name: 'SM Lanang',
-      long: 125.6309860178909,
-      lat: 7.0986049,
-    },
-    {
       name: 'Gaisano Mall of Davao',
       long: 125.61408648872225,
       lat: 7.077957700000001,
@@ -160,19 +150,9 @@ server.get('/simulate', async (request: FindRequest, reply: FastifyReply) => {
       lat: 7.07181465,
     },
     {
-      name: 'Francisco Bangoy International Airport',
-      long: 125.64345755531545,
-      lat: 7.124879699999999,
-    },
-    {
       name: 'Azuela Cove',
       long: 125.6440283,
       lat: 7.1037959,
-    },
-    {
-      name: 'Southern Philippines Medical Center',
-      long: 125.61948066256784,
-      lat: 7.0997774499999995,
     },
     {
       name: 'Davao Medical School Foundation',
