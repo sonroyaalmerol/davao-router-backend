@@ -271,7 +271,7 @@ server.get('/simulate', async (request: FindRequest, reply: FastifyReply) => {
 });
 
 server.listen(
-  {port: parseInt((process.env.PORT ?? '8080') as string), host: '0.0.0.0'},
+  {port: parseInt((process.env.PORT ?? '9090') as string), host: '0.0.0.0'},
   (err, address) => {
     if (err) {
       console.error(err);
