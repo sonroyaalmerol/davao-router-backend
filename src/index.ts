@@ -270,12 +270,9 @@ server.get('/simulate', async (request: FindRequest, reply: FastifyReply) => {
   reply.code(200).header('Content-Type', 'text/csv').send(csv);
 });
 
-server.listen(
-  {port: parseInt((process.env.PORT ?? '9090') as string), host: '0.0.0.0'},
-  (err, address) => {
-    if (err) {
-      console.error(err);
-    }
-    console.log(`Server listening at ${address}`);
+server.listen({port: 9090, host: '0.0.0.0'}, (err, address) => {
+  if (err) {
+    console.error(err);
   }
-);
+  console.log(`Server listening at ${address}`);
+});
