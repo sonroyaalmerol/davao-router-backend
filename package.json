@@ -13,7 +13,7 @@
     "pretest": "npm run compile",
     "posttest": "npm run lint",
     "generate": "node ./build/generateMatrix.js",
-    "start": "node ."
+    "start": "ts-node ."
   },
   "author": "",
   "license": "ISC",
@@ -33,6 +33,7 @@
     "@types/node": "^14.11.2",
     "@types/papaparse": "^5.3.5",
     "gts": "^3.1.0",
+    "ts-node": "^10.9.1",
     "typescript": "^4.0.3"
   }
 }
